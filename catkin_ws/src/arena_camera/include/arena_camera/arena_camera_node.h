@@ -61,7 +61,7 @@
 #include <cv_bridge/cv_bridge.h>
 
 // Arena
-#include <arena_camera/internal/ArenaApi.h>
+#include <ArenaApi.h>
 #include <arena_camera/arena_camera.h>
 #include <arena_camera/arena_camera_parameter.h>
 

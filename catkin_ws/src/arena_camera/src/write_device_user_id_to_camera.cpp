@@ -31,10 +31,13 @@
 This program will open a Lucid Arena Camera and write a desired camera id.
 */
 
-#include <arena_camera/internal/ArenaApi.h>
+// STD
 #include <unistd.h>
 #include <algorithm>
 #include <string>
+
+// Arena
+#include <ArenaApi.h>
 
 int main(int argc, char* argv[])
 {

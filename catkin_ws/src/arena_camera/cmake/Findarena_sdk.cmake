@@ -22,7 +22,7 @@ if(EXISTS ${_arena_sdk_conf})
 		)
 	string(STRIP ${arena_sdk_installation_root} arena_sdk_installation_root)
 
-	#message(${_LOG_LVL_FRMT} "arena_sdk_installation_root = ${arena_sdk_installation_root}")
+	message(${_LOG_LVL_FRMT} "arena_sdk_installation_root = ${arena_sdk_installation_root}")
 
 	######### -----------------------------------------------------------------
 	# INCLUDE

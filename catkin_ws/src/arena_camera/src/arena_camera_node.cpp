@@ -26,18 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
-#include <GenApi/GenApi.h>
-#include <arena_camera/arena_camera_node.h>
-#include <arena_camera/encoding_conversions.h>
-#include <arena_camera/internal/ArenaApi.h>
-#include <arena_camera/internal/GenApiCustom.h>
-#include <sensor_msgs/RegionOfInterest.h>
+
+// STD
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
+
+// ROS
+#include <sensor_msgs/RegionOfInterest.h>
 #include "boost/multi_array.hpp"
+
+// Arena
+#include <ArenaApi.h>
+#include <GenApi/GenApi.h>
+#include <GenApiCustom.h>
+
+// Arena node
+#include <arena_camera/arena_camera_node.h>
+#include <arena_camera/encoding_conversions.h>
 
 using diagnostic_msgs::DiagnosticStatus;
 

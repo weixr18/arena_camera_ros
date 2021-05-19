@@ -11,10 +11,6 @@
 		{
 			"name": "REPO_ROOT",
 			"path": "."
-		},
-		{
-			"name": "SFW_INSTALLED",
-			"path": "../software_release_chckout"
 		}
 	],
 	"extensions": {
@@ -29,121 +25,10 @@
 			"ms-python.vscode-pylance"
 		]
 	},
-	"launch": {
-		"configurations": [
-			//---------------------------------------------------------------------
-			//
-			// My Args
-			//
-			//---------------------------------------------------------------------
-			{
-				"name": "arena_camera_node with args",
-				"type": "cppdbg",
-				"MIMode": "gdb",
-				"setupCommands": [
-					{
-						"text": "-enable-pretty-printing" // for std::string to show value on houver while steppingg
-					}
-				],
-				"request": "launch",
-				"program": "${workspaceFolder:WS_ROOT}/devel/lib/arena_camera/arena_camera_node",
-				"args": [],
-				"cwd": "${workspaceFolder:WS_ROOT}",
-				//"stopAtEntry": true,
-				"stopAtEntry": false,
-				"preLaunchTask": "catkin_build_debug",
-				//"preLaunchTask": "catkin_clean_build_debug",
-				"sourceFileMap": {
-					//"/home/ubuntu/Jenkins/workspace/ArenaSDK_Master_Lin/": "${workspaceFolder:SFW_INSTALLED}/"
-				}
-			},
-		],
-		"compounds": []
-	},
-	"tasks": {
-		"version": "2.0.0",
-		"tasks": [
-			/*{
-					"type": "catkin_make",
-					"problemMatcher": [
-						"$catkin-gcc"
-					],
-					"group": {
-						"kind": "build",
-						"isDefault": false
-					},
-					"label": "catkin_make: build"
-				},*/
-			{
-				"label": "catkin_clean_build_debug",
-				"type": "shell",
-				"problemMatcher": [
-					"$catkin-gcc"
-				],
-				"dependsOn": [
-					"set_params"
-				],
-				"command": [
-					"cd ${workspaceFolder:REPO_ROOT}/catkin_ws/",
-					";",
-					"rm",
-					"-rf",
-					"build",
-					"devel",
-					"install",
-					"/src/arena_camera_node/build",
-					"/src/build",
-					";",
-					"catkin_make -DCMAKE_BUILD_TYPE=Debug"
-				],
-				"group": {
-					"kind": "build",
-					"isDefault": true
-				},
-			},
-			{
-				"label": "catkin_build_debug",
-				"type": "shell",
-				"problemMatcher": [
-					"$catkin-gcc"
-				],
-				"dependsOn": [
-					"set_params"
-				],
-				"command": [
-					"cd ${workspaceFolder:REPO_ROOT}/catkin_ws/",
-					";",
-					"catkin_make -DCMAKE_BUILD_TYPE=Debug"
-				]
-			},
-			{
-				"label": "set_params",
-				"type": "shell",
-				"command": [
-					";rosparam delete /arena_camera_node/",
-					";rosparam set /arena_camera_node/frame_rate",
-					"10.9",
-					";rosparam set /arena_camera_node/image_encoding",
-					"mono8",
-					//";rosparam set /arena_camera_node/device_user_id","",
-					//";rosparam set /arena_camera_node/binning_x","",
-					//";rosparam set /arena_camera_node/binning_y","",
-					//";rosparam set /arena_camera_node/gamma","",
-					";rosparam set /arena_camera_node/exposure",
-					"100",
-					";rosparam set /arena_camera_node/exposure_auto",
-					"true",
-					//";rosparam set /arena_camera_node/gain",
-					//"4",
-					//";rosparam set /arena_camera_node/gain_auto",""
-				]
-			},
-		]
-	},
 	"settings": {
 		// terminal
 		//
-		"terminal.integrated.cwd": "${workspaceFolder:REPO_ROOT}/catkin_ws/",
+		"terminal.integrated.cwd": "./catkin_ws/",
 		//
 		// file
 		//
@@ -161,10 +46,6 @@
 		"C_Cpp.intelliSenseCacheSize": 2000, // Megabytes
 		"C_Cpp.intelliSenseEngine": "Default",
 		"C_Cpp.intelliSenseEngineFallback": "Disabled",
-		"C_Cpp.default.includePath": [
-			"/opt/ros/kinetic/include/", // ros installation dir
-			"${env:ARENA_ROOT}/**" // ArenaSDK installation dir. you can replace the env variable with a path
-		],
 		"C_Cpp.default.browse.path": [],
 		"C_Cpp.default.enableConfigurationSquiggles": true,
 		"C_Cpp.dimInactiveRegions": true,
@@ -173,7 +54,7 @@
 		//
 		// Cmake
 		//
-		"cmake.parallelJobs": 88,
+		"cmake.parallelJobs": 6,
 		"cmake.saveBeforeBuild": true,
 		"cmake.parseBuildDiagnostics": true,
 		// ${workspaceFolder} interpreted PKG_ROOT because it is selected form the status bar
@@ -186,7 +67,8 @@
 		//
 		// ROS
 		//
-		"ros.distro": "kinetic",
+		"ros.distro": "melodic",
+		//"ros.distro": "noetic",
 		"cSpell.words": [
 			"DCMAKE",
 			"rosparam"
