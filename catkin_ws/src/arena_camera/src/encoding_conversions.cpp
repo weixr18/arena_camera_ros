@@ -27,9 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#include <arena_camera/encoding_conversions.h>
+
+// ROS
 #include <ros/ros.h>
 #include <sensor_msgs/image_encodings.h>
+
+// Arena node
+#include <arena_camera/encoding_conversions.h>
 
 namespace arena_camera
 {

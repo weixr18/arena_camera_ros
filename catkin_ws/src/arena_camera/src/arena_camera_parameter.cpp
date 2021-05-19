@@ -33,7 +33,7 @@
 // ROS
 #include <sensor_msgs/image_encodings.h>
 
-// Arena ROS
+// Arena node
 #include <arena_camera/arena_camera_parameter.h>
 
 namespace arena_camera

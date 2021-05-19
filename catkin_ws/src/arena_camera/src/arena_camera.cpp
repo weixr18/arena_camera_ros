@@ -26,10 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
-#include <arena_camera/internal/ArenaApi.h>
-#include <arena_camera/internal/arena_camera.h>
+
+// STD
 #include <string>
 #include <vector>
+
+// Arena
+#include <ArenaApi.h>
+
+// Arena node
+#include <arena_camera/internal/arena_camera.h>
 
 namespace arena_camera
 {

@@ -32,10 +32,15 @@
  *          engelhard@magazino.eu
  */
 
-#include <arena_camera/arena_camera_node.h>
-#include <arena_camera/internal/ArenaApi.h>
+// ROS
 #include <ros/ros.h>
 #include <boost/thread.hpp>
+
+// Arena
+#include <ArenaApi.h>
+
+// Arena node
+#include <arena_camera/arena_camera_node.h>
 
 int main(int argc, char **argv)
 {
