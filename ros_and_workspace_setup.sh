@@ -3,10 +3,9 @@
 #
 # MAIN VARS TO CHANGE
 #
-ARENA_INSTALLATION_ROOT="$HOME/ArenaSDK_Linux_x64/"
+ARENA_INSTALLATION_ROOT="$HOME/software/OutputDirectory/Linux"
 ARENA_ROS_WORDSPACE_TO_SETUP="$HOME/arena_camera_ros/catkin_ws" #change to workspace location
 INSTALL_ROS=1
-
 
 
 ############################################################
@@ -30,9 +29,17 @@ CURR_OS="$(lsb_release -sc)"
 
 if [ $CURR_OS = "xenial" ]; then
     ROS_DIS="kinetic"
+
+if [ $CURR_OS = "bionic" ]; then
+    ROS_DIS="melodic"
+    #ROS1_DIS="noetic"
+
+if [ $CURR_OS = "focal" ]; then
+    ROS_DIS="melodic"
+    #ROS1_DIS="noetic"
 else
     echo "$CURR_OS is might not be supported yet! check https://support.thinklucid.com/using-ros-for-linux/"
-    exit(-1)
+    exit -1
 fi
 
 ############################################################
@@ -49,7 +56,10 @@ if [ $INSTALL_ROS -eq 1 ]; then
     # Install ROS Desktop.
     sudo apt-get update
     sudo apt-get install ros-$ROS_DIS-desktop-full
+    
     # Setup system dependencies for ROS.
+    
+    # NOTE: might need sudo apt-get install python[3]-rosdep
     sudo rosdep init
     sudo rosdep fix-permissions
     rosdep update
