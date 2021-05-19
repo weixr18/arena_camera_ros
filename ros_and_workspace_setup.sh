@@ -30,13 +30,11 @@ CURR_OS="$(lsb_release -sc)"
 if [ $CURR_OS = "xenial" ]; then
     ROS_DIS="kinetic"
 
-if [ $CURR_OS = "bionic" ]; then
+elif [ $CURR_OS = "bionic" ]; then
     ROS_DIS="melodic"
-    #ROS1_DIS="noetic"
 
-if [ $CURR_OS = "focal" ]; then
-    ROS_DIS="melodic"
-    #ROS1_DIS="noetic"
+elif [ $CURR_OS = "focal" ]; then
+    ROS1_DIS="noetic"
 else
     echo "$CURR_OS is might not be supported yet! check https://support.thinklucid.com/using-ros-for-linux/"
     exit -1
