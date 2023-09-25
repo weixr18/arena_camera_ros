@@ -401,6 +401,13 @@ bool ArenaCameraNode::startGrabbing()
     setImageEncoding(arena_camera_parameter_set_.imageEncoding());
 
     //
+    // PACKETS
+    //
+    // configure Auto Negotiate Packet Size and Packet Resend
+    Arena::SetNodeValue<GenICam::bool>(pDevice_->GetNodeMap(), "StreamAutoNegotiatePacketSize", true);
+    Arena::SetNodeValue<GenICam::bool>(pDevice_->GetNodeMap(), "StreamPacketResendEnable", true);
+
+    //
     // TRIGGER MODE
     //
     GenApi::CStringPtr pTriggerMode = pNodeMap->GetNode("TriggerMode");
