@@ -404,8 +404,8 @@ bool ArenaCameraNode::startGrabbing()
     // PACKETS
     //
     // configure Auto Negotiate Packet Size and Packet Resend
-    Arena::SetNodeValue<GenICam::bool>(pDevice_->GetNodeMap(), "StreamAutoNegotiatePacketSize", true);
-    Arena::SetNodeValue<GenICam::bool>(pDevice_->GetNodeMap(), "StreamPacketResendEnable", true);
+    Arena::SetNodeValue<bool>(pDevice->GetTLStreamNodeMap(), "StreamAutoNegotiatePacketSize", true);
+    Arena::SetNodeValue<bool>(pDevice->GetTLStreamNodeMap(), "StreamPacketResendEnable", true);
 
     //
     // TRIGGER MODE
