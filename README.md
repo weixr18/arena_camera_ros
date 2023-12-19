@@ -4,6 +4,6 @@
 setup and usage https://support.thinklucid.com/using-ros-for-linux/
 
 # Report an issue
-Please reach out to support team 
+Please reach out to the support team 
 https://support.thinklucid.com/contact-support/
-support@thinklucid.com
+Or email to support@thinklucid.com
