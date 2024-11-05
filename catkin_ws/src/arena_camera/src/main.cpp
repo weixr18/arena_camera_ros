@@ -30,6 +30,7 @@
 /* Authors: debout@magazino.eu
  *          grimm@magazino.eu
  *          engelhard@magazino.eu
+ *          weixr0605@sina.com
  */
 
 // ROS
@@ -45,23 +46,21 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "arena_camera_node");
-
+  // enable ROS_DEBUG showing
+  ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
   arena_camera::ArenaCameraNode arena_camera_node;
-
   ros::Rate r(arena_camera_node.frameRate());
-
   ROS_INFO_STREAM("Start image grabbing if node connects to topic with "
                   << "a frame_rate of: " << arena_camera_node.frameRate() << " Hz");
 
   // Main thread and brightness-service thread
   boost::thread th(boost::bind(&ros::spin));
-
+  
   while (ros::ok())
   {
     arena_camera_node.spin();
     r.sleep();
   }
-
   ROS_INFO("Terminate ArenaCameraNode");
   return EXIT_SUCCESS;
 }

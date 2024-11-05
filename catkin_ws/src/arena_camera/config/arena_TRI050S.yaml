@@ -1,0 +1,54 @@
+# see ./config-readme.md
+
+## Informations
+
+camera_frame: LUCID-TRI050S
+
+device_user_id: ""
+
+camera_info_url: "file:///home/dhz/.ros/camera_info/TRI050S-Spin2.yaml"
+
+
+## Mode 
+
+image_encoding: "mono8"
+
+shutter_mode: "global"
+
+polarized_merge: false
+
+hardware_trigger: false
+
+
+## Brightness
+
+################## [Auto gain] ##################
+
+brightness: 120
+
+brightness_continuous: true
+
+exposure_auto: true
+
+gain_auto: true
+
+exposure_search_timeout: 0.1
+
+exposure_auto_dampling: 1.0
+
+auto_exposure_upper_limit: 100000
+
+
+
+## Others
+
+gamma: 0.5
+
+frame_rate: 15.0
+
+binning_x: 1
+binning_y: 1
+
+gige_mtu_size: 9000
+
+# gige_inter_pkg_delay: 1000

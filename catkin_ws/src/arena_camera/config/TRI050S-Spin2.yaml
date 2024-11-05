@@ -1,0 +1,26 @@
+image_width: 1224
+image_height: 1024
+camera_name: LUCID-TRI050S
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [1204.79726,    0.     ,  610.9901 ,
+            0.     , 1195.06438,  512.68541,
+            0.     ,    0.     ,    1.     ]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.105716, 0.150371, 0.000324, -0.002701, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1., 0., 0.,
+         0., 1., 0.,
+         0., 0., 1.]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [1183.69397,    0.     ,  607.36343,    0.     ,
+            0.     , 1176.84656,  512.49152,    0.     ,
+            0.     ,    0.     ,    1.     ,    0.     ]

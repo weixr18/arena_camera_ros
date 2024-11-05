@@ -61,6 +61,10 @@ public:
    * @param nh the ros::NodeHandle to use
    */
   void readFromRosParameterServer(const ros::NodeHandle& nh);
+  void readBrightnessParameters(const ros::NodeHandle& nh);
+  void readModeParameters(const ros::NodeHandle& nh);
+  void readOtherParameters(const ros::NodeHandle& nh);
+  
 
   /**
    * Getter for the device_user_id_ set from ros-parameter server
@@ -111,39 +115,62 @@ public:
   void setCameraInfoURL(const ros::NodeHandle& nh, const std::string& camera_info_url);
 
 public:
-  /** Binning factor to get downsampled images. It refers here to any camera
-   * setting which combines rectangular neighborhoods of pixels into larger
-   * "super-pixels." It reduces the resolution of the output image to
-   * (width / binning_x) x (height / binning_y).
-   * The default values binning_x = binning_y = 0 are considered the same
-   * as binning_x = binning_y = 1 (no subsampling).
-   */
-  size_t binning_x_;
-  size_t binning_y_;
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////  Mode  //////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Flags which indicate if the binning factors are provided and hence
-   * should be set during startup
+   * The encoding of the pixels -- channel meaning, ordering, size taken
+   * from the list of strings in include/sensor_msgs/image_encodings.h
+   * The supported encodings are 'mono8', 'bgr8', 'rgb8', 'bayer_bggr8',
+   * 'bayer_gbrg8', 'bayer_rggb8' and 'yuv422'
    */
-  bool binning_x_given_;
-  bool binning_y_given_;
-
+  std::string image_encoding_;
   bool image_encoding_given_;
 
   /**
-   * Factor that describes the image downsampling to speed up the exposure
-   * search to find the desired brightness.
-   * The smallest window height is img_rows/downsampling_factor
+   * Flag that indicates if the camera has a flash connected which should be on on exposure
+   * Only supported for GigE cameras. Default: false
    */
-  int downsampling_factor_exp_search_;
+  bool auto_flash_;
+  /**
+   * Flag that indicates if the camera, when using auto_flash == true, a flash connected on line 2 which should be on on
+   * exposure
+   * Only supported for GigE cameras. Default: true
+   */
+  bool auto_flash_line_2_;
+  /**
+   * Flag that indicates if the camera has, when using auto_flash == true,  a flash connected on line 3 which should be
+   * on on exposure
+   * Only supported for GigE cameras. Default: true
+   */
+  bool auto_flash_line_3_;
 
-  // #######################################################################
-  // ###################### Image Intensity Settings  ######################
-  // #######################################################################
-  // The following settings do *NOT* have to be set. Each camera has default
-  // values which provide an automatic image adjustment
-  // If one would like to adjust image brightness, it is not
-  // #######################################################################
+  /**
+   Shutter mode
+  */
+  SHUTTER_MODE shutter_mode_;
+
+  /**
+  * If the camera is polarized camera, set this value to true, and
+  * the 4 polarized channels will merge to 1 channel, therefore the
+  * image is a non-polarized image. */
+  bool polarized_merge_;
+
+  /** Use hardware trigger means use signal from wires to trigger image 
+  * grabbing, such as Line 0. For the mapping of GPIO ports and hardware 
+  * channel name, see LUCID website below.
+  * https://support.thinklucid.com/app-note-using-gpio-on-lucid-cameras/
+  */
+  bool hardware_trigger_;
+
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////  Brightness  ///////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
    * The exposure time in microseconds to be set after opening the camera.
@@ -169,19 +196,7 @@ public:
    */
   bool gain_given_;
 
-  /**
-   * Gamma correction of pixel intensity.
-   * Adjusts the brightness of the pixel values output by the camera's sensor
-   * to account for a non-linearity in the human perception of brightness or
-   * of the display system (such as CRT).
-   */
-  double gamma_;
 
-  /**
-   * Flag which indicates if the gamma correction value is provided and
-   * hence should be set during startup
-   */
-  bool gamma_given_;
 
   /**
    * The average intensity value of the images. It depends on the exposure
@@ -241,6 +256,53 @@ public:
    */
   double auto_exp_upper_lim_;
 
+
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////   Others   ////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** Binning factor to get downsampled images. It refers here to any camera
+   * setting which combines rectangular neighborhoods of pixels into larger
+   * "super-pixels." It reduces the resolution of the output image to
+   * (width / binning_x) x (height / binning_y).
+   * The default values binning_x = binning_y = 0 are considered the same
+   * as binning_x = binning_y = 1 (no subsampling).
+   */
+  size_t binning_x_;
+  size_t binning_y_;
+
+  /**
+   * Flags which indicate if the binning factors are provided and hence
+   * should be set during startup
+   */
+  bool binning_x_given_;
+  bool binning_y_given_;
+
+
+  /**
+   * Gamma correction of pixel intensity.
+   * Adjusts the brightness of the pixel values output by the camera's sensor
+   * to account for a non-linearity in the human perception of brightness or
+   * of the display system (such as CRT).
+   */
+  double gamma_;
+
+  /**
+   * Flag which indicates if the gamma correction value is provided and
+   * hence should be set during startup
+   */
+  bool gamma_given_;
+
+
+  /**
+   * Factor that describes the image downsampling to speed up the exposure
+   * search to find the desired brightness.
+   * The smallest window height is img_rows/downsampling_factor
+   */
+  int downsampling_factor_exp_search_;
+
   /**
    * The MTU size. Only used for GigE cameras.
    * To prevent lost frames the camera has to be configured
@@ -257,10 +319,6 @@ public:
    */
   int inter_pkg_delay_;
 
-  /**
-   Shutter mode
-  */
-  SHUTTER_MODE shutter_mode_;
 
   /**
    * Flag that indicates if the camera has been calibrated and the intrinsic
@@ -268,23 +326,8 @@ public:
    */
   bool has_intrinsic_calib_;
 
-  /**
-   * Flag that indicates if the camera has a flash connected which should be on on exposure
-   * Only supported for GigE cameras. Default: false
-   */
-  bool auto_flash_;
-  /**
-   * Flag that indicates if the camera, when using auto_flash == true, a flash connected on line 2 which should be on on
-   * exposure
-   * Only supported for GigE cameras. Default: true
-   */
-  bool auto_flash_line_2_;
-  /**
-   * Flag that indicates if the camera has, when using auto_flash == true,  a flash connected on line 3 which should be
-   * on on exposure
-   * Only supported for GigE cameras. Default: true
-   */
-  bool auto_flash_line_3_;
+
+
 
 protected:
   /**
@@ -321,13 +364,6 @@ protected:
    */
   std::string camera_info_url_;
 
-  /**
-   * The encoding of the pixels -- channel meaning, ordering, size taken
-   * from the list of strings in include/sensor_msgs/image_encodings.h
-   * The supported encodings are 'mono8', 'bgr8', 'rgb8', 'bayer_bggr8',
-   * 'bayer_gbrg8', 'bayer_rggb8' and 'yuv422'
-   */
-  std::string image_encoding_;
 };
 
 }  // namespace arena_camera

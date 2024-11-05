@@ -41,8 +41,35 @@ namespace arena_camera
 ArenaCameraParameter::ArenaCameraParameter()
   : camera_frame_("arena_camera")
   , device_user_id_("")
-  , frame_rate_(5.0)
   , camera_info_url_("")
+
+  ///////////////////////////////
+  //////// mode settings ////////
+  ///////////////////////////////
+  , hardware_trigger_(false)
+  , polarized_merge_(false)
+  , shutter_mode_(SM_DEFAULT)
+  , auto_flash_(false)
+
+  ///////////////////////////////
+  // exposure related settings //
+  ///////////////////////////////
+  , exposure_(10000.0)
+  , exposure_given_(true)
+  , gain_(0.5)
+  , gain_given_(true)
+  , exposure_search_timeout_(5.)
+  , auto_exp_upper_lim_(0.0)
+  , brightness_(100)
+  , brightness_given_(false)
+  , brightness_continuous_(false)
+  , exposure_auto_(false)
+  , gain_auto_(false)
+
+  ///////////////////////////////
+  /////// other settings ////////
+  ///////////////////////////////
+  , frame_rate_(5.0)
   , image_encoding_("")
   , image_encoding_given_(false)
   , binning_x_(1)
@@ -50,29 +77,11 @@ ArenaCameraParameter::ArenaCameraParameter()
   , binning_x_given_(false)
   , binning_y_given_(false)
   , downsampling_factor_exp_search_(1)
-  ,
-  // ##########################
-  //  image intensity settings
-  // ##########################
-  exposure_(10000.0)
-  , exposure_given_(false)
-  , gain_(0.5)
-  , gain_given_(false)
   , gamma_(1.0)
   , gamma_given_(false)
-  , brightness_(100)
-  , brightness_given_(false)
-  , brightness_continuous_(false)
-  , exposure_auto_(true)
-  , gain_auto_(true)
-  ,
-  // #########################
-  exposure_search_timeout_(5.)
-  , auto_exp_upper_lim_(0.0)
   , mtu_size_(3000)
   , inter_pkg_delay_(1000)
-  , shutter_mode_(SM_DEFAULT)
-  , auto_flash_(false)
+
 {
 }
 
@@ -80,27 +89,240 @@ ArenaCameraParameter::~ArenaCameraParameter()
 {
 }
 
+
+
+
+/****************************************** Read parameters ********************************************/
+
+
 void ArenaCameraParameter::readFromRosParameterServer(const ros::NodeHandle& nh)
 {
   nh.param<std::string>("camera_frame", camera_frame_, "arena_camera");
-
   nh.param<std::string>("device_user_id", device_user_id_, "");
-
-  if (nh.hasParam("frame_rate"))
-  {
-    nh.getParam("frame_rate", frame_rate_);
-    ROS_DEBUG_STREAM("frame_rate is given and has value " << frame_rate_);
-  }
-
   nh.param<std::string>("camera_info_url", camera_info_url_, "");
   if (nh.hasParam("camera_info_url"))
   {
     nh.getParam("camera_info_url", camera_info_url_);
   }
+  readModeParameters(nh);
+  readBrightnessParameters(nh);
+  readOtherParameters(nh);
+  validateParameterSet(nh);
+  return;
+}
 
-  binning_x_given_ = nh.hasParam("binning_x");
-  if (binning_x_given_)
+
+void ArenaCameraParameter::readBrightnessParameters(const ros::NodeHandle& nh) {
+
+  //////////////////////////////////
+  /// exposure: auto or fixed? /////
+  //////////////////////////////////
+  /*
+    exposure_given | exposure_auto_       | action           |
+                   |                      |                  |
+    ---------------|----------------------|------------------|
+    1     F                 F             | Use default fixed exposure value. |
+          
+    2     F                 T             | Normal auto exposure |
+
+    3     T                 F             | Normal fixed exposure |
+
+    4     T                 F             | Abnormal, given fixed value overrides "exposure_auto". |
+  */
+  exposure_given_ = nh.hasParam("exposure");
+  bool exposure_auto_given = nh.hasParam("exposure_auto");
+  if (!exposure_given_) {
+    if (!exposure_auto_) {
+      // 1 FF
+      ROS_DEBUG_STREAM(
+        "[Bright] exposure is NOT given and exposure_auto False, will use default fixed exposure value" << exposure_
+      );
+      exposure_auto_ = false;
+    }
+    else {
+      // 2 FT
+      nh.getParam("exposure_auto", exposure_auto_);
+      ROS_DEBUG_STREAM("[Bright] exposure_auto_ is given and has value " << exposure_auto_);
+    }
+  }
+  else { // exposure_given_ True
+    if (!exposure_auto_) {
+      // 3 TF
+      nh.getParam("exposure", exposure_);
+      ROS_DEBUG_STREAM("[Bright] exposure is given and has value " << exposure_);
+    } 
+    else {
+      // 4 TT
+      ROS_DEBUG_STREAM("[Bright] exposure is given and exposure_auto True, will set exposure_auto to False.");
+      exposure_auto_ = false;
+    }
+  }
+
+
+  //////////////////////////////////
+  ///// gain: auto or fixed? ///////
+  //////////////////////////////////
+  /*
+    gain_given | gain_auto_       | action           |
+                   |                      |                  |
+    ---------------|----------------------|------------------|
+    1     F                 F             | Use default fixed gain value. |
+          
+    2     F                 T             | Normal auto gain |
+
+    3     T                 F             | Normal fixed gain |
+
+    4     T                 F             | Abnormal, given fixed value overrides "gain_auto". |
+  */
+  gain_given_ = nh.hasParam("gain");
+  bool gain_auto_given = nh.hasParam("gain_auto");
+  if (!gain_given_) {
+    if (!gain_auto_) {
+      // 1 FF
+      ROS_DEBUG_STREAM(
+        "[Bright] gain is NOT given and gain_auto False, will use default fixed gain value" << gain_
+      );
+      gain_auto_ = false;
+    }
+    else {
+      // 2 FT
+      nh.getParam("gain_auto", gain_auto_);
+      ROS_DEBUG_STREAM("[Bright] gain_auto_ is given and has value " << gain_auto_);
+    }
+  }
+  else { // gain_given_ True
+    if (!gain_auto_) {
+      // 3 TF
+      nh.getParam("gain", gain_);
+      ROS_DEBUG_STREAM("[Bright] gain is given and has value " << gain_);
+    } 
+    else {
+      // 4 TT
+      ROS_DEBUG_STREAM( "[Bright] gain is given and gain_auto True, will set gain_auto to False.");
+      gain_auto_ = false;
+    }
+  }
+
+  ////////////////////////////////////
+  /// brightness: auto or fixed? /////
+  ////////////////////////////////////
+  brightness_given_ = nh.hasParam("brightness");
+  auto ignoreBrightness = brightness_given_ && gain_given_ && exposure_given_;
+  if (ignoreBrightness)
   {
+    ROS_WARN_STREAM("[Bright] Gain ('gain') and Exposure Time ('exposure') "
+                    << "are given as startup ros-parameter and hence assumed to be "
+                    << "fixed! The desired brightness (" << brightness_ << ") can't "
+                    << "be reached, so the brightness will be ignored.");
+    brightness_given_ = false;
+  }
+  else {
+    // auto brightness
+    if (!brightness_given_) {
+      ROS_DEBUG_STREAM(
+        "[Bright] Auto brightness mode, but brightness is NOT given. " 
+        << "Will use default brightness value " << brightness_);
+    }
+    else {
+      nh.getParam("brightness", brightness_);
+      ROS_DEBUG_STREAM("[Bright] brightness is given and has value " << brightness_);
+    }
+
+    if (nh.hasParam("brightness_continuous")) {
+      nh.getParam("brightness_continuous", brightness_continuous_);
+      ROS_DEBUG_STREAM("[Bright] auto brightness will be continuous.");
+    }
+    else {
+      ROS_DEBUG_STREAM("[Bright] CAUTION: Brightness value will be reached only ONCE.");
+    }
+
+  }
+
+
+  /////// exposure search ///////
+  if (nh.hasParam("exposure_search_timeout")) {
+    nh.getParam("exposure_search_timeout", exposure_search_timeout_);
+    ROS_DEBUG_STREAM("[Bright] exposure_search_timeout is given and has value " << exposure_search_timeout_);
+  }
+  else{
+    ROS_DEBUG_STREAM("[Bright] use default exposure_search_timeout: " << 5.);
+    nh.param<double>("exposure_search_timeout", exposure_search_timeout_, (float)5.);
+  }
+  nh.param<int>("downsampling_factor_exposure_search", downsampling_factor_exp_search_, 20);
+  nh.param<double>("auto_exposure_upper_limit", auto_exp_upper_lim_, 10000000.);
+}
+
+
+
+
+
+void ArenaCameraParameter::readModeParameters(const ros::NodeHandle& nh) {
+
+  // image encoding
+  image_encoding_given_ = nh.hasParam("image_encoding");
+  if (nh.hasParam("image_encoding"))
+  {
+    std::string encoding;
+    nh.getParam("image_encoding", encoding);
+    image_encoding_ = encoding;
+    /*if (!encoding.empty() &&
+    	!sensor_msgs::image_encodings::isMono(encoding) &&
+    	!sensor_msgs::image_encodings::isColor(encoding) &&
+    	!sensor_msgs::image_encodings::isBayer(encoding) &&
+    	encoding != sensor_msgs::image_encodings::YUV422){
+    	ROS_WARN_STREAM(
+        "Desired image encoding parameter: '" << encoding
+    		<< "' is not part of the 'sensor_msgs/image_encodings.h' list!"
+    		<< " Will not set encoding"
+      );
+    	encoding = std::string("");
+    }*/
+    
+  }
+
+  // shutter mode
+  std::string shutter_param_string;
+  nh.param<std::string>("shutter_mode", shutter_param_string, "");
+  if (shutter_param_string == "rolling") {
+    shutter_mode_ = SM_ROLLING;
+  }
+  else if (shutter_param_string == "global") {
+    shutter_mode_ = SM_GLOBAL;
+  }
+  else if (shutter_param_string == "global_reset") {
+    shutter_mode_ = SM_GLOBAL_RESET_RELEASE;
+  }
+  else {
+    shutter_mode_ = SM_DEFAULT;
+  }
+
+  // auto flash
+  nh.param<bool>("auto_flash", auto_flash_, false);
+  nh.param<bool>("auto_flash_line_2", auto_flash_line_2_, true);
+  nh.param<bool>("auto_flash_line_3", auto_flash_line_3_, true);
+  ROS_WARN("Autoflash: %i, line2: %i , line3: %i ", auto_flash_, auto_flash_line_2_, auto_flash_line_3_);
+
+  // hardware trigger
+  if (nh.hasParam("hardware_trigger"))
+  {
+    nh.getParam("hardware_trigger", hardware_trigger_);
+    ROS_DEBUG_STREAM("hardware_trigger is given and has value " << hardware_trigger_);
+  }
+}
+
+
+
+
+
+void ArenaCameraParameter::readOtherParameters(const ros::NodeHandle& nh){
+  // frame rate
+  if (nh.hasParam("frame_rate")) {
+    nh.getParam("frame_rate", frame_rate_);
+    ROS_DEBUG_STREAM("frame_rate is given and has value " << frame_rate_);
+  }
+  // binning 
+  binning_x_given_ = nh.hasParam("binning_x");
+  if (binning_x_given_) {
     int binning_x;
     nh.getParam("binning_x", binning_x);
     ROS_DEBUG_STREAM( "binning x is given and has value " << binning_x);
@@ -117,8 +339,7 @@ void ArenaCameraParameter::readFromRosParameterServer(const ros::NodeHandle& nh)
     }
   }
   binning_y_given_ = nh.hasParam("binning_y");
-  if (binning_y_given_)
-  {
+  if (binning_y_given_) {
     int binning_y;
     nh.getParam("binning_y", binning_y);
     ROS_DEBUG_STREAM("binning y is given and has value " << binning_y);
@@ -133,248 +354,35 @@ void ArenaCameraParameter::readFromRosParameterServer(const ros::NodeHandle& nh)
     {
       binning_y_ = static_cast<size_t>(binning_y);
     }
-  }
-  nh.param<int>("downsampling_factor_exposure_search", downsampling_factor_exp_search_, 20);
-  image_encoding_given_ = nh.hasParam("image_encoding");
-  if (nh.hasParam("image_encoding"))
-  {
-    std::string encoding;
-    nh.getParam("image_encoding", encoding);
-    // if (!encoding.empty() &&
-    // 	!sensor_msgs::image_encodings::isMono(encoding) &&
-    // 	!sensor_msgs::image_encodings::isColor(encoding) &&
-    // 	!sensor_msgs::image_encodings::isBayer(encoding) &&
-    // 	encoding != sensor_msgs::image_encodings::YUV422)
-    // {
-    // 	ROS_WARN_STREAM("Desired image encoding parameter: '" << encoding
-    // 														  << "' is not part of the 'sensor_msgs/image_encodings.h'
-    // list!"
-    // 														  << " Will not set encoding");
-    // 	encoding = std::string("");
-    // }
-    image_encoding_ = encoding;
-  }
+  } 
 
-  // ##########################
-  //  image intensity settings
-  // ##########################
-
+  // gamma
   gamma_given_ = nh.hasParam("gamma");
-  if (gamma_given_)
-  {
+  if (gamma_given_) {
     nh.getParam("gamma", gamma_);
     ROS_DEBUG_STREAM("gamma is given and has value " << gamma_);
   }
 
-  // > 0: Exposure time in microseconds
-  exposure_given_ = nh.hasParam("exposure");
-  brightness_given_ = nh.hasParam("brightness");
-  gain_given_ = nh.hasParam("gain");
-  if (exposure_given_)
-  {
-    nh.getParam("exposure", exposure_);
-    ROS_DEBUG_STREAM("exposure is given and has value " << exposure_);
+  // mtu size
+  if (nh.hasParam("gige_mtu_size")) {
+    nh.getParam("gige_mtu_size", mtu_size_);
   }
-  if (gain_given_)
-  {
-    nh.getParam("gain", gain_);
-    ROS_DEBUG_STREAM("gain is given and has value " << gain_ );
+  // inter_pkg_delay
+  if (nh.hasParam("gige_inter_pkg_delay")) {
+    nh.getParam("gige_inter_pkg_delay", inter_pkg_delay_);
   }
-  if (brightness_given_)
-  {
-    nh.getParam("brightness", brightness_);
-    ROS_DEBUG_STREAM("brightness is given and has value " << brightness_);
-  }
-
-  // ignore brightness?
-  auto ignoreBrightness = brightness_given_ && gain_given_ && exposure_given_;
-  if (ignoreBrightness)
-  {
-    ROS_WARN_STREAM("Gain ('gain') and Exposure Time ('exposure') "
-                    << "are given as startup ros-parameter and hence assumed to be "
-                    << "fix! The desired brightness (" << brightness_ << ") can't "
-                    << "be reached! Will ignore the brightness by only "
-                    << "setting gain and exposure . . .");
-    brightness_given_ = false;
-  }
-  else if (nh.hasParam("brightness_continuous"))
-  {
-    nh.getParam("brightness_continuous", brightness_continuous_);
-    ROS_DEBUG_STREAM("brightness is continuous");
-  }
-  
-  // ignore exposure_auto ?
-  /*
-    exposure_given | exposure_auto_given_ | exposure_auto_ | action           |
-                   |                      | received val   |                  |
-    ---------------|----------------------|----------------|------------------|
-    1     F                 F                       F      | default value issue  |
-
-    2     F                 F                       T      | default case notting to do |
-          
-    3     F                 T                       F      | shoe msg ; and set exposure_auto true in nodemap |
-
-    4     F                 T                       T      | print param msg
-
-    5     T                 F                       F      | default value issue  |
-
-    6     T                 F                       T      | set default exposure_auto to false silently  |
-
-    7     T                 T                       F      | show param msg
-              
-    8     T                 T                       T      | show ignore msg; show param msg ;set to false |
-  */
-  auto exposure_auto_given = nh.hasParam("exposure_auto");
-  nh.getParam("exposure_auto", exposure_auto_);
-  
-  //1 FFF (exposure_auto_ 's default value is not set to true)
-
-  // 2 FFT
-  if (!exposure_given_  && !exposure_auto_given && exposure_auto_)
-  {
-    // default case nothing to show/do
-  }
-  // 3 FTF
-  else if(!exposure_given_  && exposure_auto_given && !exposure_auto_){
-    // it is ok to pass exposure_auto explicitly to false
-    // with no exposure time. Exposure time will taken from device nodemap
-    ROS_DEBUG_STREAM("exposure_auto is given and has value Off/false" );
-
-    // TODO SET ON THE NODE MAP
-  }
-  // 4 FTT
-  else if(!exposure_given_  && exposure_auto_given && exposure_auto_){
-    ROS_DEBUG_STREAM("exposure_auto is given and has value Continuous/true");
-  }
-
-  // 5 TFF (exposure_auto_ 's default value is not set true)
-
-  // 6 TFT
-  else if(exposure_given_  && !exposure_auto_given && exposure_auto_)
-  {
-    exposure_auto_ = false; // change because it defaults to true; 
-    //no msg it is not take from the param server
-  }
-  // 7 TTF
-  else if(exposure_given_ && exposure_auto_given && !exposure_auto_){
-    ROS_DEBUG_STREAM("exposure_auto is given and has value Off/false" );
-  }
-  // 8 TTT
-  else if(exposure_given_  && exposure_auto_given && exposure_auto_) // ignore auto
-  {
-    ROS_DEBUG_STREAM("exposure_auto is given and has value Continuous/true");
-    exposure_auto_ = false;
-    ROS_WARN_STREAM("exposure_auto is ignored because exposure is given.");
-  }
-
-  // ignore gain_auto
-  /*
-    gain_given     |   gain_auto_given_   | gain_auto_     | action           |
-                   |                      | received val   |                  |
-    ---------------|----------------------|----------------|------------------|
-    1     F                 F                       F      | default value issue  |
-
-    2     F                 F                       T      | default case notting to do |
-          
-    3     F                 T                       F      | shoe msg ; and set gain_auto true in nodemap |
-
-    4     F                 T                       T      | print param msg
-
-    5     T                 F                       F      | default value issue  |
-
-    6     T                 F                       T      | set default gain_auto to false silently  |
-
-    7     T                 T                       F      | show param msg
-              
-    8     T                 T                       T      | show ignore msg; show param msg ;set to false |
-  */
-
-  auto gain_auto_given = nh.hasParam("gain_auto");
-  nh.getParam("gain_auto", gain_auto_);
-  
-  //1 FFF (gain_auto_ 's default value is not set to true)
-
-  // 2 FFT
-  if (!gain_given_  && !gain_auto_given && gain_auto_)
-  {
-    // default case nothing to show/do
-  }
-  // 3 FTF
-  else if(!gain_given_  && gain_auto_given && !gain_auto_){
-    // it is ok to pass gain_auto explicitly to false
-    // with no gain value. Gain value will taken from device nodemap
-    ROS_DEBUG_STREAM("gain_auto is given and has value Off/false" );
-
-    // TODO SET ON THE NODE MAP
-  }
-  // 4 FTT
-  else if(!gain_given_  && gain_auto_given && gain_auto_){
-    ROS_DEBUG_STREAM("gain_auto is given and has value Continuous/true");
-  }
-
-  // 5 TFF (gain_auto_ 's default value is not set true)
-
-  // 6 TFT
-  else if(gain_given_  && !gain_auto_given && gain_auto_)
-  {
-    gain_auto_ = false; // change because it defaults to true; 
-    //no msg it is not take from the param server
-  }
-  // 7 TTF
-  else if(gain_given_ && gain_auto_given && !gain_auto_){
-    ROS_DEBUG_STREAM("gain_auto is given and has value Off/false" );
-  }
-  // 8 TTT
-  else if (gain_given_  && gain_auto_given && gain_auto_) // ignore auto
-  {
-    ROS_DEBUG_STREAM("gain_auto is given and has value Continuous/true");
-    gain_auto_ = false;
-    ROS_WARN_STREAM("gain_auto is ignored because gain is given.");
-  }
-
-  
-  // ##########################
-
-  nh.param<double>("exposure_search_timeout", exposure_search_timeout_, 5.);
-  nh.param<double>("auto_exposure_upper_limit", auto_exp_upper_lim_, 10000000.);
-
-  if (nh.hasParam("gige/mtu_size"))
-  {
-    nh.getParam("gige/mtu_size", mtu_size_);
-  }
-
-  if (nh.hasParam("gige/inter_pkg_delay"))
-  {
-    nh.getParam("gige/inter_pkg_delay", inter_pkg_delay_);
-  }
-
-  std::string shutter_param_string;
-  nh.param<std::string>("shutter_mode", shutter_param_string, "");
-  if (shutter_param_string == "rolling")
-  {
-    shutter_mode_ = SM_ROLLING;
-  }
-  else if (shutter_param_string == "global")
-  {
-    shutter_mode_ = SM_GLOBAL;
-  }
-  else if (shutter_param_string == "global_reset")
-  {
-    shutter_mode_ = SM_GLOBAL_RESET_RELEASE;
-  }
-  else
-  {
-    shutter_mode_ = SM_DEFAULT;
-  }
-
-  nh.param<bool>("auto_flash", auto_flash_, false);
-  nh.param<bool>("auto_flash_line_2", auto_flash_line_2_, true);
-  nh.param<bool>("auto_flash_line_3", auto_flash_line_3_, true);
-
-  ROS_WARN("Autoflash: %i, line2: %i , line3: %i ", auto_flash_, auto_flash_line_2_, auto_flash_line_3_);
-  validateParameterSet(nh);
-  return;
 }
+
+
+
+
+
+
+/****************************************** Others ********************************************/
+
+
+
+
 
 void ArenaCameraParameter::adaptDeviceUserId(const ros::NodeHandle& nh, const std::string& device_user_id)
 {
@@ -432,6 +440,7 @@ void ArenaCameraParameter::validateParameterSet(const ros::NodeHandle& nh)
   }
   return;
 }
+
 
 const std::string& ArenaCameraParameter::deviceUserID() const
 {

@@ -142,8 +142,16 @@ protected:
   /**
   * Grabs an image and stores the image in img_raw_msg_
   * @return false if an error occurred.
+  * DEPRECATED. use grabPolarizedImage() instead !!!
   */
   virtual bool grabImage();
+
+  /**
+  * Grabs an polarized image, merge its polarized pixels, 
+  * and stores the image in img_raw_msg_.
+  * @return false if an error occurred.
+  */
+  bool grabPolarizedImage();
 
   /**
   * Fills the ros CameraInfo-Object with the image dimensions
@@ -211,6 +219,19 @@ protected:
   */
   bool setExposureCallback(camera_control_msgs::SetExposure::Request& req,
                            camera_control_msgs::SetExposure::Response& res);
+
+
+  /**
+  * Sets the target brightness which is the intensity-mean over all pixels.
+  * If the target exposure time is not in the range of Arena's auto target
+  * brightness range the extended brightness search is started.
+  * The Auto function of the Arena-API supports values from [50 - 205].
+  * Using a binary search, this range will be extended up to [1 - 255].
+  * @param target_brightness is the desired brightness. Range is [1...255].
+  * @param current_brightness is the current brightness with the given settings.
+  * @return true if the brightness could be reached or false otherwise.
+  */
+  bool manualBrightnessSearch(const int& target_brightness, int& reached_brightness);
 
   /**
   * Sets the target brightness which is the intensity-mean over all pixels.
@@ -305,7 +326,7 @@ protected:
   * @return indices describing the subset of points
   */
   void genSamplingIndicesRec(std::vector<std::size_t>& indices, const std::size_t& min_window_height,
-                             const cv::Point2i& start, const cv::Point2i& end);
+                             const cv::Point2i& start, const cv::Point2i& end, const int image_width);
 
   /**
   * Calculates the mean brightness of the image based on the subset indices
@@ -353,6 +374,11 @@ protected:
   */
   bool setAutoflash(const int output_id, camera_control_msgs::SetBool::Request& req,
                     camera_control_msgs::SetBool::Response& res);
+  
+  // /**
+  // * Function called by setBrightness(), as its name.
+  // */
+  // void disableAllRunningAutoBrightessFunctions(void);
 
   ros::NodeHandle nh_;
   ArenaCameraParameter arena_camera_parameter_set_;
@@ -394,6 +420,11 @@ protected:
   void create_diagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
   void create_camera_info_diagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
 };
+
+extern Arena::ISystem* pSystem_;
+extern Arena::IDevice* pDevice_;
+extern Arena::IImage* pImage_;
+extern const uint8_t* pData_;
 
 }  // namespace arena_camera
 

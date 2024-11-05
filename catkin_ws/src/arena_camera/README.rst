@@ -93,10 +93,10 @@ The following settings do **NOT** have to be set. Each camera has default values
 
 **Optional and device specific parameter**
 
-- **gige/mtu_size**
+- **gige_mtu_size**
   The MTU size. Only used for GigE cameras. To prevent lost frames configure the camera has to be configured with the MTU size the network card supports. A value greater 3000 should be good (1500 for RaspberryPI)
 
-- **gige/inter_pkg_delay**
+- **gige_inter_pkg_delay**
   The inter-package delay in ticks. Only used for GigE cameras. To prevent lost frames it should be greater 0. For most of GigE-Cameras, a value of 1000 is reasonable. For GigE-Cameras used on a RaspberryPI this value should be set to 11772.
 
 

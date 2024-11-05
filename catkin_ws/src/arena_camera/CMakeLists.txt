@@ -117,7 +117,7 @@ catkin_package(
     #    <> 
 )
 
-#7
+# 7
 # ROS CHECKS
 #
 
@@ -158,6 +158,10 @@ set(arena_camera_node_name arena_camera_node)
 add_executable(
     ${arena_camera_node_name}  # runs by rosrun
         src/arena_camera_node.cpp
+        src/node_exposure.cpp
+        src/node_getset.cpp
+        src/node_init.cpp
+        src/node_polar.cpp
         src/arena_camera_parameter.cpp
         src/arena_camera.cpp
         src/encoding_conversions.cpp
